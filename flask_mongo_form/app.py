@@ -1,50 +1,27 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, request
 import pymongo
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 app = Flask(__name__)
 
-# MongoDB Atlas connection
-MONGO_URI = os.getenv("MONGO_URI")
-client = pymongo.MongoClient(MONGO_URI)
-
-db = client["student_db"]
-collection = db["students"]
+client = pymongo.MongoClient("your_mongodb_connection_string")
+db = client.todoDB
+collection = db.todoItems
 
 
-@app.route("/")
-def form():
-    return render_template("form.html")
+@app.route("/submittodoitem", methods=["POST"])
+def submitTodo():
 
+    itemName = request.form.get("itemName")
+    itemDescription = request.form.get("itemDescription")
 
-@app.route("/submit", methods=["POST"])
-def submit():
+    data = {
+        "itemName": itemName,
+        "itemDescription": itemDescription
+    }
 
-    try:
-        name = request.form.get("name")
-        age = request.form.get("age")
-        email = request.form.get("email")
+    collection.insert_one(data)
 
-        data = {
-            "name": name,
-            "age": age,
-            "email": email
-        }
-
-        collection.insert_one(data)
-
-        return redirect(url_for("success"))
-
-    except Exception as e:
-        return render_template("form.html", error=str(e))
-
-
-@app.route("/success")
-def success():
-    return render_template("success.html")
+    return "Item Added Successfully"
 
 
 if __name__ == "__main__":
